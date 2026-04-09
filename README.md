@@ -31,7 +31,7 @@ The security analysis suite provides live web visualizations of:
 - **ECB vs CBC Leakage Demonstration**
 - **The Hash Avalanche Effect (SHA-256 vs MD5)**
 
-![Security Telemetry](./assets/security.webp)
+![Security Telemetry](./assets/security.png)
 
 ---
 
