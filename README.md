@@ -1,173 +1,91 @@
-# 🔐 Real-Time Secure Dashboard with RFID-Based Portfolio & Price Alerts
+# 🛡️ PoCS Final Project: Edge-AI Secure Hardware Wallet & Dashboard
 
-An IoT + Cybersecurity academic project demonstrating **AES-128 encryption**, **RFID-based authentication**, and **real-time data monitoring** using **ESP32**, **Streamlit**, and **Firebase Realtime Database**.
+A comprehensive **Microprocessors & Edge-AI Cybersecurity Project** integrating an ESP32 hardware module, MFRC522 RFID authentication, native AES-128 encryption, FreeRTOS Symmetric Multiprocessing, and Cloud Generative AI.
 
----
-
-## 📋 Project Overview
-
-This system is a two-sided secure dashboard:
-
-| Side | Technology | Purpose |
-|------|-----------|---------|
-| **Web App** | Python / Streamlit | Portfolio input → AES encrypt → Firebase storage + public data dashboard |
-| **Hardware** | ESP32 + MFRC522 RFID | RFID scan → Firebase fetch → AES decrypt → LCD display + price alerts |
-
-### Key Features
-- 🌦️ **Real-time public data**: Weather, stock prices, global time zones
-- 🔐 **AES-128 encryption**: Portfolio data encrypted before cloud storage
-- 🏷️ **RFID authentication**: Only authorized users can view their portfolio on the ESP32
-- 📊 **AES vs DES benchmarking**: Performance comparison with visualization
-- 🔥 **Firebase Realtime Database**: Cloud storage for encrypted portfolio data
-- 🚨 **Price alerts**: LED/buzzer notifications for significant price changes (ESP32)
+![Dashboard Verification](./assets/dashboard.webp)
 
 ---
 
-## 🏗️ Architecture
+## 🌟 Key Functional Features
 
+### 1. 🧠 FreeRTOS Dual-Core Processing
+Unlike standard embedded projects, this ESP32 firmware natively schedules execution across **both cores**:
+- **Core 0 (NetworkTask):** Asynchronous Wi-Fi handling, Firebase payload decryption using `mbedtls`, and continuous web-polling.
+- **Core 1 (HardwareTask):** Hardware I/O processing including the 16x2 I2C LCD pagination algorithms, buzzer PWM rendering, and RFID (SPI) matrix decoding.
+
+### 2. 🛡️ Anti-Brute Force Hardware Lockdown
+The firmware features an advanced anomaly-detection state machine.
+If the RFID scanner detects highly rapid polling (e.g., 3 physical taps in under 5 seconds), the ESP32 internally detects an edge attack. It overrides the database query loop, securely scrubs its RAM buffers, and triggers a visual/audial lockdown siren pattern.
+
+### 3. 🤖 Edge-to-Cloud Generative AI (Gemini)
+The Python Web Dashboard actively processes your financial portfolio through **Gemini 2.5 Flash**. 
+The AI evaluates your holdings and provides actionable market strategies (e.g., `"HOLD Mkt Volatile"`). This string is mathematically combined with your portfolio, AES-128 encrypted, and synced to Firebase. 
+
+When you authenticate physically via RFID, the ESP32 natively pulls the AES blob and directly pages the Generative AI text onto the hardware LCD screen.
+
+![Portfolio Generation](./assets/portfolio.png)
+
+### 4. 📈 Cryptography Telemetry (AES vs DES vs Hashes)
+The security analysis suite provides live web visualizations of:
+- **AES vs DES Performance Evaluation**
+- **ECB vs CBC Leakage Demonstration**
+- **The Hash Avalanche Effect (SHA-256 vs MD5)**
+
+![Security Telemetry](./assets/security.webp)
+
+---
+
+## ⚙️ Architecture & Wiring
+
+### Hardware Connections (ESP32 DOIT DevKit V1)
+| Component | ESP32 Pin | Note |
+| --- | --- | --- |
+| **MFRC522 RFID** | D5, D23, D19, D18, D4 | Standard SPI Bus + Reset |
+| **16x2 I2C LCD** | D21, D22 | I2C Bus (SDA/SCL) |
+| **LED** | D12 | Hardware Status |
+| **Buzzer** | D13 | PWM Telemetry |
+
+### The Data Flow
 ```mermaid
 graph TD
-    subgraph "Web App (Streamlit)"
-        UI[Dashboard UI]
-        Crypto1[crypto_utils]
-        Fire1[firebase_utils]
-    end
-
-    subgraph "Cloud (Firebase)"
-        DB[(Realtime Database)]
-    end
-
-    subgraph "Hardware (ESP32)"
-        RFID[MFRC522 RFID Scanner]
-        ESP[ESP32 Microcontroller]
-        Crypto2[AES-128 Decryption]
-        LCD[20x4 I2C LCD Display]
-    end
-
-    UI -->|Plaintext + Key| Crypto1
-    Crypto1 -->|AES-128 Ciphertext| Fire1
-    Fire1 -- "PUT /users/{UID}/portfolio_AES" --> DB
-    
-    RFID -->|Scans UID| ESP
-    ESP -- "GET /users/{UID}/portfolio_AES" --> DB
-    DB -. "Ciphertext" .-> ESP
-    ESP -->|Ciphertext + Shared Key| Crypto2
-    Crypto2 -->|Plaintext| LCD
+    A[Gemini AI] -->|Live Generation| B(Streamlit Python Dashboard)
+    B -->|AES-128 Encrypt Portfolio+AI| C[(Firebase Realtime DB)]
+    D[Physical RFID Card] -->|SPI Matrix Tap| E{ESP32 Core 1}
+    E -.->|Queue Message| F{ESP32 Core 0}
+    F -->|HTTPS REST Pull| C
+    F -->|mbedtls AES Decrypt| G[RAM Buffer]
+    G -.->|Queue Message| E
+    E -->|Paginate Output| H[I2C LCD Screen]
 ```
-
-### 📸 Dashboard Features & Security Analysis
-
-The Streamlit dashboard allows managing public data and running advanced cryptographic analyses:
-
-![ECB vs CBC Mode Demonstration](/Users/agraw/.gemini/antigravity/brain/f17b6ebc-78d2-42a4-95b3-3ec574522d1b/ecb_vs_cbc_results_1775494952697.png)
-
-![SHA-256 vs MD5 Hashing Analysis](/Users/agraw/.gemini/antigravity/brain/f17b6ebc-78d2-42a4-95b3-3ec574522d1b/hashing_results_new_1775494999253.png)
 
 ---
 
-## 🚀 Quick Start (Web App)
+## 🚀 How to Run the Project
 
-### Prerequisites
-- Python 3.9+
-- OpenWeatherMap API key ([get one free](https://openweathermap.org/api))
+### 1. Hardware Initialization
+1. Flash the code in `esp32_firmware/esp32_firmware.ino` to the ESP32 using the Arduino IDE.
+2. The ESP32 will boot and connect to the Hotspot provided in the firmware configuration.
 
-### Setup
-
+### 2. Python Environment Setup
+Install the rigid dependencies securely:
 ```bash
-# 1. Clone the repository
-git clone https://github.com/akshat333-debug/BharatFi2.git
-cd BharatFi2
-
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate   # macOS/Linux
-# venv\Scripts\activate    # Windows
-
-# 3. Install dependencies
 pip install -r requirements.txt
+```
 
-# 4. Configure environment
-cp .env.example .env
-# Edit .env and add your WEATHER_API_KEY
+### 3. Environment Variables
+Create a file locally named `.env` in the exact structure as `.env.example`.
+```env
+WEATHER_API_KEY=your_openweathermap_key
+GEMINI_API_KEY=your_google_ai_studio_key
+```
+*(Note: Do not commit the `.env` file!)*
 
-# 5. Run the dashboard
+### 4. System Launch
+Launch the core dashboard:
+```bash
 streamlit run main_dashboard.py
 ```
-
----
-
-## 📁 Project Structure
-
+In a secondary terminal, launch the background AI poller:
+```bash
+python ai_background_worker.py
 ```
-Project-PoCS-Final-main/
-├── config.py                    # Centralized configuration (Firebase URL, constants)
-├── utils/
-│   ├── __init__.py
-│   ├── crypto_utils.py          # Shared AES/DES encrypt/decrypt functions
-│   └── firebase_utils.py        # Firebase REST API helper functions
-├── main_dashboard.py            # Primary Streamlit dashboard (weather + stocks + crypto)
-├── aes_des_dashboard.py         # AES vs DES benchmark visualization dashboard
-├── crypto_firebase.py           # CLI: AES/DES encrypt → Firebase write/read
-├── crypto_firebase_benchmark.py # CLI: Benchmark 1000 AES/DES cycles → Firebase
-├── aes_des_test.py              # CLI: Standalone AES/DES encrypt/decrypt test
-├── firebase_test.py             # CLI: Basic Firebase connectivity test
-├── POC_Database.json            # Sample Firebase schema / seed data
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Environment variable template
-└── .gitignore                   # Git ignore rules
-```
-
----
-
-## 🔐 Security Model
-
-| Layer | Mechanism | Details |
-|-------|-----------|---------|
-| **Encryption** | AES-128-ECB | Symmetric key shared between Streamlit and ESP32 |
-| **Authentication** | RFID UID | Only registered RFID tags can access portfolio data |
-| **Transport** | HTTPS | Firebase REST API uses TLS encryption |
-| **Storage** | Base64 + AES | Portfolio never stored in plaintext in the cloud |
-
----
-
-## 🔧 ESP32 Hardware Setup
-
-### Components
-- ESP32 DevKit v1
-- MFRC522 RFID Reader
-- 20x4 LCD (I2C)
-- RGB LED + Buzzer (for price alerts)
-
-### Wiring
-
-| LCD 20x4 I2C | ESP32 |
-|--------------|-------|
-| GND | GND |
-| VCC | VIN |
-| SDA | D21 |
-| SCL | D22 |
-
-| RFID-RC522 | ESP32 |
-|------------|-------|
-| SDA/SS | D5 |
-| SCK | D18 |
-| MOSI | D23 |
-| MISO | D19 |
-| RST | D4 |
-| GND | GND |
-| 3.3V | 3V3 |
-
----
-
-## 📚 References
-
-- NIST FIPS 197: Advanced Encryption Standard (AES), 2001
-- Ari Juels, *RFID Security and Privacy: A Research Survey*, IEEE, 2006
-- Chris Karlof et al., *TinySec: Link Layer Security for WSN*, SenSys, 2004
-- Sabrina Sicari et al., *Security, Privacy and Trust in IoT*, Computer Networks, 2015
-- ESP32 Datasheet, Espressif Systems
-- Firebase Documentation, Google
-
----
-
-## © 2026 PoCS Project | Principles of Cyber Security

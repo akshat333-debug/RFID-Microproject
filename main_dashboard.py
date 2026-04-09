@@ -323,6 +323,7 @@ with tab3:
                             response = model.generate_content(prompt)
                             ai_text = response.text.replace("\n", "").strip()[:15]
                             portfolio_text_with_ai = f"{portfolio_text} | AI: {ai_text}"
+                            st.success(f"🤖 AI Edge Strategy Generated: {ai_text}")
                     except Exception as e:
                         st.warning(f"AI Advisor temporarily unavailable: {e}")
 
