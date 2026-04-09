@@ -2,7 +2,7 @@
 
 A comprehensive **Microprocessors & Edge-AI Cybersecurity Project** integrating an ESP32 hardware module, MFRC522 RFID authentication, native AES-128 encryption, FreeRTOS Symmetric Multiprocessing, and Cloud Generative AI.
 
-![Dashboard Verification](./assets/dashboard.png)
+![Dashboard Verification](./assets/dashboard_main.png)
 
 ---
 
